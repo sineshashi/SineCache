@@ -1,8 +1,8 @@
 //! Code of Cache struct which provides functionalities of caching.
 
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::collections::HashMap;
 
-use crate::{common::CacheEntry, eviction_policies::common::EvictionPolicy};
+use crate::{common::{CacheEntry, KeyRef}, eviction_policies::common::EvictionPolicy};
 
 /// A thread-safe key-value cache with configurable eviction policy.
 
@@ -10,7 +10,7 @@ use crate::{common::CacheEntry, eviction_policies::common::EvictionPolicy};
 
 pub struct Cache<K, V, P>
 where
-    K: Eq + std::hash::Hash + Clone,
+    K: Eq + std::hash::Hash + Clone ,
     P: EvictionPolicy<K>,
 {
     /// The maximum size of the cache in number of entries.
@@ -25,7 +25,7 @@ where
 
 impl<K, V, P> Cache<K, V, P>
 where
-    K: Eq + std::hash::Hash + Clone,
+    K: Eq + std::hash::Hash + Clone ,
     P: EvictionPolicy<K>,
 {
     /// Creates a new `Cache` instance.
@@ -47,7 +47,8 @@ where
     pub fn get(&mut self, key: &K) -> Option<&V>
     {
         if let Some(entry) = self.cache.get(key) {
-            self.eviction_policy.on_get(key);
+            let key = KeyRef::new(key);
+            self.eviction_policy.on_get(&key);
             return Some(&entry.value);
         }
         None
@@ -59,8 +60,9 @@ where
 
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
     {
-        if let Some(entry) = self.cache.get_mut(key) {
-            self.eviction_policy.on_get(key);
+        if let Some(entry) = self.cache.get_mut(&key) {
+            let key = KeyRef::new(key);
+            self.eviction_policy.on_get(&key);
             return Some(&mut entry.value);
         }
         None
@@ -72,12 +74,18 @@ where
 
     pub fn put(&mut self, key: K, value: V) {
         if self.cache.len() >= self.max_size {
-            if let Some(key) = self.eviction_policy.evict() {
-                self.cache.remove(&key);
+            if let Some(evicted) = self.eviction_policy.evict() {
+                self.cache.remove(unsafe{&*evicted.key});
             }
         }
         self.cache.insert(key.clone(), CacheEntry::new(value));
-        self.eviction_policy.on_set(&key);
+        match self.cache.get_key_value(&key){
+            None => {},
+            Some((k, _)) => {
+                let keyref = KeyRef::new(k);
+                self.eviction_policy.on_set(keyref);
+            }
+        };
     }
 
     /// Removes the entry with the given key from the cache.
@@ -86,6 +94,7 @@ where
 
     pub fn remove(&mut self, key: &K) {
         if self.cache.remove(key).is_some() {
+            let key = KeyRef::new(key);
             self.eviction_policy.remove(key);
         }
     }
@@ -93,7 +102,7 @@ where
     ///Checks if key is already in cache.
 
     pub fn contains_key(&self, key: &K) -> bool {
-        return self.cache.contains_key(key);
+        return self.cache.contains_key(&key);
     }
 
     ///Returns the current size of the cache. The number of keys in the cache at the moment.

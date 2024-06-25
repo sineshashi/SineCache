@@ -1,6 +1,12 @@
-use std::{sync::{Arc, Mutex}, thread};
+use std::{
+    collections::HashMap, sync::{Arc, Mutex}, thread
+};
 
-use crate::{cache::Cache, common::CacheEntry, eviction_policies::{common::EvictionPolicy, lru::LRU}};
+use crate::{
+    cache::Cache,
+    common::CacheEntry,
+    eviction_policies::{common::EvictionPolicy, lru::LRU},
+};
 
 /// Test basic functionality of putting and getting items from the cache.
 #[test]

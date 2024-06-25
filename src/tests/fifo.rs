@@ -17,7 +17,7 @@ fn test_put_get() {
     cache.put(key1.clone(), value1.clone());
 
     assert!(
-        cache.get(&key1).is_some_and(|x| x.value == value1.value)
+        cache.get(&key1).is_some_and(|x| {x.value == value1.value})
     );
 
     let key2 = "key2".to_string();
@@ -56,4 +56,56 @@ fn test_eviction() {
     assert!(
         cache.get(&key3).is_some_and(|x| x.value == value3.value)
     );
+}
+
+/// Test getting mutable reference and removing items from the cache.
+#[test]
+fn test_get_mut_and_remove() {
+    // Create a new cache with FIFO eviction policy and capacity of 2
+    let mut cache = Cache::new(2, FIFO::new());
+
+    // Insert two items into the cache
+    cache.put("K1".to_string(), 1);
+    cache.put("K2".to_string(), 2);
+
+    // Get mutable reference to "K1" and modify its value
+    if let Some(value) = cache.get_mut(&"K1".to_string()) {
+        *value = 10;
+    }
+
+    // Remove "K2" from the cache
+    cache.remove(&"K2".to_string());
+
+    // Assert that "K1" has been updated and "K2" has been removed
+    assert_eq!(cache.get(&"K1".to_string()), Some(&10));
+    assert_eq!(cache.get(&"K2".to_string()), None);
+}
+
+/// Test checking if a key exists in the cache.
+#[test]
+fn test_contains_key() {
+    // Create a new cache with FIFO eviction policy and capacity of 2
+    let mut cache = Cache::new(2, FIFO::new());
+
+    // Insert two items into the cache
+    cache.put("K1".to_string(), 1);
+    cache.put("K2".to_string(), 2);
+
+    // Assert that "K1" exists in the cache and "K3" does not
+    assert!(cache.contains_key(&"K1".to_string()));
+    assert!(!cache.contains_key(&"K3".to_string()));
+}
+
+/// Test getting the current size of the cache.
+#[test]
+fn test_size() {
+    // Create a new cache with FIFO eviction policy and capacity of 2
+    let mut cache = Cache::new(2, FIFO::new());
+
+    // Insert two items into the cache
+    cache.put("K1".to_string(), 1);
+    cache.put("K2".to_string(), 2);
+
+    // Assert that the size of the cache is 2
+    assert_eq!(cache.size(), 2);
 }
