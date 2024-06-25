@@ -2,3 +2,4 @@
 
 pub mod fifo;
 pub mod common;
+pub mod lru;

@@ -1,17 +1,16 @@
 # SineCache: A Simple and Efficient In-Memory Cache Library for Rust (Unpublished)
 
-**SineCache** is a work-in-progress Rust library designed to provide a user-friendly and efficient way to store key-value pairs in memory with optional eviction policies. It's being built with thread-safety in mind to handle concurrent access from multiple threads in your Rust applications.
+**SineCache** is a work-in-progress Rust library designed to provide a user-friendly and efficient way to store key-value pairs in memory with optional eviction policies.
 
 ## **Planned Features:**
 
 * **In-Memory Cache:** Stores data efficiently in memory for fast access.
-* **Thread-Safe:** Ensures safe concurrent access to the cache.
-* **Configurable Eviction Policies (Under Development):** Choose from different eviction strategies like First-In-First-Out (FIFO) (implemented), Least Recently Used (LRU), and Least Frequently Used (LFU) to manage cache size.
+* **Configurable Eviction Policies (Under Development):** Choose from different eviction strategies like First-In-First-Out (FIFO) (implemented), Least Recently Used (LRU) (implemented), and Least Frequently Used (LFU) to manage cache size.
 * **Easy to Use API:** Simple methods for adding, retrieving, and removing data from the cache.
 
 ## **Current Stage**
 
-SineCache is currently under development. The core functionality with FIFO eviction policy is implemented. Support for additional eviction policies like LRU and LFU is planned for future releases.
+SineCache is currently under development. The core functionality with FIFO and LRU eviction policies are implemented. Support for additional eviction policies like LFU is planned for future releases.
 
 ## **Getting Started (Placeholder)**
 
@@ -23,7 +22,7 @@ SineCache is currently under development. The core functionality with FIFO evict
 
 ## **Future Roadmap**
 
-* Implement Least Recently Used (LRU) and Least Frequently Used (LFU) eviction policies.
+* Implement Least Frequently Used (LFU) eviction policy.
 * Integrate Time-To-Live (TTL) functionality for automatic cache entry expiration.
 * Publish the library on crates.io for easy installation.
 
