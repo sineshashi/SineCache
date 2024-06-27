@@ -1,95 +1,77 @@
-use std::{
-    collections::HashMap, sync::{Arc, Mutex}, thread
-};
+//! Unit tests regarding LRU
 
-use crate::{
-    cache::Cache,
-    common::CacheEntry,
-    eviction_policies::{common::EvictionPolicy, lru::LRU},
-};
+use crate::{common::KeyRef, eviction_policies::lru::LRU};
+use crate::eviction_policies::common::EvictionPolicy;
 
-/// Test basic functionality of putting and getting items from the cache.
 #[test]
-fn test_basic_get_put() {
-    // Create a new cache with LRU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LRU::new());
-
-    // Insert two items into the cache
-    cache.put("K1".to_string(), 1);
-    cache.put("K2".to_string(), 2);
-
-    // Assert that the items can be retrieved correctly
-    assert_eq!(cache.get(&"K1".to_string()), Some(&1));
-    assert_eq!(cache.get(&"K2".to_string()), Some(&2));
+fn test_new_lru() {
+    let mut lru: LRU<i32> = LRU::new();
+    assert_eq!(lru.len(), 0);
+    assert!(lru.evict().is_none());
 }
 
-/// Test LRU eviction policy when inserting more items than the cache capacity.
 #[test]
-fn test_lru_eviction() {
-    // Create a new cache with LRU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LRU::new());
+fn test_on_set_and_evict() {
+    let mut lru: LRU<i32> = LRU::new();
+    let key1 = KeyRef::new(&1);
+    let key2 = KeyRef::new(&2);
 
-    // Insert three items into the cache, exceeding its capacity
-    cache.put("K1".to_string(), 1);
-    cache.put("K2".to_string(), 2);
-    cache.put("K3".to_string(), 3);
+    lru.on_set(key1.clone());
+    lru.on_set(key2.clone());
 
-    // Assert that the least recently used item "K1" has been evicted
-    assert_eq!(cache.get(&"K1".to_string()), None);
-    // Assert that "K2" is still in the cache
-    assert_eq!(cache.get(&"K2".to_string()), Some(&2));
-    // Assert that "K3" is in the cache
-    assert_eq!(cache.get(&"K3".to_string()), Some(&3));
+    assert_eq!(lru.evict(), Some(key1));
+    assert_eq!(lru.evict(), Some(key2));
+    assert_eq!(lru.evict(), None);
 }
 
-/// Test getting mutable reference and removing items from the cache.
 #[test]
-fn test_get_mut_and_remove() {
-    // Create a new cache with LRU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LRU::new());
+fn test_on_get() {
+    let mut lru: LRU<i32> = LRU::new();
+    let key1 = KeyRef::new(&1);
+    let key2 = KeyRef::new(&2);
+    let key3 = KeyRef::new(&3);
 
-    // Insert two items into the cache
-    cache.put("K1".to_string(), 1);
-    cache.put("K2".to_string(), 2);
+    lru.on_set(key1.clone());
+    lru.on_set(key2.clone());
+    lru.on_set(key3.clone());
 
-    // Get mutable reference to "K1" and modify its value
-    if let Some(value) = cache.get_mut(&"K1".to_string()) {
-        *value = 10;
-    }
-
-    // Remove "K2" from the cache
-    cache.remove(&"K2".to_string());
-
-    // Assert that "K1" has been updated and "K2" has been removed
-    assert_eq!(cache.get(&"K1".to_string()), Some(&10));
-    assert_eq!(cache.get(&"K2".to_string()), None);
+    lru.on_get(&key1);
+    assert_eq!(lru.evict(), Some(key2));
+    assert_eq!(lru.evict(), Some(key3));
+    assert_eq!(lru.evict(), Some(key1));
+    assert_eq!(lru.evict(), None);
 }
 
-/// Test checking if a key exists in the cache.
 #[test]
-fn test_contains_key() {
-    // Create a new cache with LRU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LRU::new());
+fn test_remove_and_evict() {
+    let mut lru: LRU<i32> = LRU::new();
+    let key1 = KeyRef::new(&1);
+    let key2 = KeyRef::new(&2);
 
-    // Insert two items into the cache
-    cache.put("K1".to_string(), 1);
-    cache.put("K2".to_string(), 2);
+    lru.on_set(key1.clone());
+    lru.on_set(key2.clone());
+    lru.remove(key1.clone());
 
-    // Assert that "K1" exists in the cache and "K3" does not
-    assert!(cache.contains_key(&"K1".to_string()));
-    assert!(!cache.contains_key(&"K3".to_string()));
+    assert_eq!(lru.evict(), Some(key2));
+    assert_eq!(lru.evict(), None);
 }
 
-/// Test getting the current size of the cache.
 #[test]
-fn test_size() {
-    // Create a new cache with LRU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LRU::new());
+fn test_evict_with_multiple_keys() {
+    let mut lru: LRU<i32> = LRU::new();
+    let key1 = KeyRef::new(&1);
+    let key2 = KeyRef::new(&2);
+    let key3 = KeyRef::new(&3);
+    let key4 = KeyRef::new(&4);
 
-    // Insert two items into the cache
-    cache.put("K1".to_string(), 1);
-    cache.put("K2".to_string(), 2);
+    lru.on_set(key1.clone());
+    lru.on_set(key2.clone());
+    lru.on_set(key3.clone());
+    lru.on_set(key4.clone());
 
-    // Assert that the size of the cache is 2
-    assert_eq!(cache.size(), 2);
+    assert_eq!(lru.evict(), Some(key1));
+    assert_eq!(lru.evict(), Some(key2));
+    assert_eq!(lru.evict(), Some(key3));
+    assert_eq!(lru.evict(), Some(key4));
+    assert_eq!(lru.evict(), None);
 }

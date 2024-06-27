@@ -1,33 +1,49 @@
-# SineCache: A Simple and Efficient In-Memory Cache Library for Rust (Unpublished)
+# SineCache
 
-**SineCache** is a work-in-progress Rust library designed to provide a user-friendly and efficient way to store key-value pairs in memory with optional eviction policies.
+SineCache is a high-performance, in-memory caching library for Rust, designed to efficiently store and manage key-value pairs with support for various eviction policies.
 
-## **Planned Features:**
+## Features
 
-* **In-Memory Cache:** Stores data efficiently in memory for fast access.
-* **Configurable Eviction Policies (Under Development):** Choose from different eviction strategies like First-In-First-Out (FIFO) (implemented), Least Recently Used (LRU) (implemented), and Least Frequently Used (LFU) to manage cache size.
-* **Easy to Use API:** Simple methods for adding, retrieving, and removing data from the cache.
+- **Multiple Eviction Policies**: Supports FIFO (First In, First Out), LRU (Least Recently Used), and LFU (Least Frequently Used) eviction policies out of the box.
+- **Customizable**: Define your own eviction policies by implementing a simple trait, enabling tailored cache behavior to suit specific application needs.
+- **Efficient Memory Management**: Optimizes memory usage by using references (`KeyRef`) to keys stored in the cache, reducing redundancy and improving performance.
 
-## **Current Stage**
+## Getting Started
 
-SineCache is currently under development. The core functionality with FIFO and LRU eviction policies are implemented. Support for additional eviction policies like LFU is planned for future releases.
+To use SineCache in your Rust project, add it to your `Cargo.toml`:
 
-## **Getting Started (Placeholder)**
+```toml
+[dependencies]
+sine_cache = "0.1.0"
+```
 
-*This section will be filled with instructions once the library is published on crates.io*
+## Example
 
-## **Basic Usage Example (Placeholder)**
+```rust
+use sine_cache::cache::Cache;
+use sine_cache::eviction_policies::lfu::LFU;
 
-*This section will include a code example demonstrating usage once the library is published*
+fn main() {
+    let capacity = 10; // Maximum number of entries in the cache.
+    let mut cache = Cache::new(capacity, LFU::new());
 
-## **Future Roadmap**
+    // Inserting key-value pairs into the cache
+    cache.put(1, "One");
+    cache.put(1, "one"); // Overwrites previous value
+    cache.put(2, "Two");
 
-* Implement Least Frequently Used (LFU) eviction policy.
-* Integrate Time-To-Live (TTL) functionality for automatic cache entry expiration.
-* Publish the library on crates.io for easy installation.
+    // Retrieving a value from the cache
+    let value = cache.get(&1);
+    println!("{:?}", value); // Output: Some("one")
+}
+```
 
-## **Contributing**
+This example demonstrates basic usage of SineCache with LFU eviction policy. You can easily switch to other eviction policies like FIFO or LRU by replacing `LFU::new()` with the desired policy constructor.
 
-We welcome contributions to SineCache! If you'd like to help with development or have suggestions, feel free to reach out (mention preferred communication method, e.g., GitHub discussions, email).
+## Warnings
 
-**Note:** This library is currently under development and not yet published. Stay tuned for updates
+- **Thread Safety**: **Warning**: SineCache does not employ locking mechanisms. Concurrent access from multiple threads may lead to undefined behavior or data corruption. For multi-threaded applications, consider implementing appropriate locking strategies or using thread-safe alternatives.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

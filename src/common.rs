@@ -54,3 +54,17 @@ impl<K: PartialEq> PartialEq for KeyRef<K> {
 }
 
 impl<K: Eq> Eq for KeyRef<K> {}
+
+impl<K: std::fmt::Debug> std::fmt::Debug for KeyRef<K> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_str("KeyRef { key: ")?;
+        // Since we have a raw pointer, we can't directly print its value
+        // for security reasons.
+        unsafe {
+            // This is safe only if the pointer points to valid memory
+            // and the type K implements Debug.
+            f.write_fmt(format_args!("{:?}", *self.key))?;
+        }
+        f.write_str(" }")
+    }
+}

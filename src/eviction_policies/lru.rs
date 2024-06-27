@@ -22,7 +22,7 @@
 //! `Send` and `Sync`.
 //!
 
-use std::{collections::HashMap, ptr::NonNull};
+use std::{collections::HashMap, fmt::Debug, ptr::NonNull};
 
 use crate::common::KeyRef;
 
@@ -47,7 +47,7 @@ where
         Self {
             key: key_ref,
             pre: None,
-            next: None
+            next: None,
         }
     }
 }
@@ -55,7 +55,7 @@ where
 /// Represents an LRU (Least Recently Used) cache implementation.
 pub struct LRU<K>
 where
-    K: Eq + std::hash::Hash + Clone ,
+    K: Eq + std::hash::Hash + Clone,
 {
     map: HashMap<KeyRef<K>, NonNull<LinkedListNode<K>>>,
     head: Option<*mut LinkedListNode<K>>,
@@ -64,7 +64,7 @@ where
 
 impl<K> LRU<K>
 where
-    K: Eq + std::hash::Hash + Clone ,
+    K: Eq + std::hash::Hash + Clone,
 {
     /// Creates a new instance of `LRU`.
     pub fn new() -> Self {
@@ -73,6 +73,10 @@ where
             head: None,
             tail: None,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        return self.map.len();
     }
 
     /// Removes a node from the linked list.
@@ -88,6 +92,13 @@ where
         } else {
             self.tail = unsafe { (*curr).pre };
         }
+
+        if let Some(head) = self.head {
+            unsafe { (*head).pre = None };
+        };
+        if let Some(tail) = self.tail {
+            unsafe { (*tail).next = None };
+        };
     }
 
     /// Inserts a node at the front of the linked list.
@@ -96,6 +107,7 @@ where
 
         unsafe {
             (*current).next = self.head;
+            (*current).pre = None;
         }
         if let Some(head) = self.head {
             unsafe {
@@ -107,9 +119,11 @@ where
         // Update tail if the list was previously empty
         if self.tail.is_none() {
             self.tail = Some(current);
-        }
+        };
+
         unsafe {
-            self.map.insert((*current).key.clone(), NonNull::new(current).unwrap());
+            self.map
+                .insert((*current).key.clone(), NonNull::new(current).unwrap());
         }
     }
 
@@ -131,6 +145,7 @@ where
             if let Some(pre) = unsafe { (*tail).pre } {
                 unsafe {
                     (*pre).next = None;
+                    self.tail = Some(pre);
                 }
             } else {
                 self.tail = None;
@@ -146,7 +161,7 @@ where
 /// evictions based on key access patterns.
 impl<K> EvictionPolicy<K> for LRU<K>
 where
-    K: Eq + std::hash::Hash + Clone ,
+    K: Eq + std::hash::Hash + Clone + Debug,
 {
     /// Adjusts the cache structure when a key is accessed.
     fn on_get(&mut self, key: &KeyRef<K>) {
@@ -160,10 +175,9 @@ where
         if let Some(node) = self.map.remove(&key) {
             self.remove_node(&node);
         }
-        self.insert_at_front(&NonNull::new(Box::into_raw(Box::new(
-            LinkedListNode::new(key),
-        )))
-        .unwrap());
+        self.insert_at_front(
+            &NonNull::new(Box::into_raw(Box::new(LinkedListNode::new(key)))).unwrap(),
+        );
     }
 
     /// Removes and returns the least recently used key from the cache.
@@ -180,7 +194,7 @@ where
 }
 
 /// Enables safe concurrent access to `LRU` instances across threads when `K` is `Send`.
-unsafe impl<K: Eq + std::hash::Hash + Clone  + Send> Send for LRU<K> {}
+unsafe impl<K: Eq + std::hash::Hash + Clone + Send> Send for LRU<K> {}
 
 /// Enables safe concurrent access to `LRU` instances across threads when `K` is `Sync`.
-unsafe impl<K: Eq + std::hash::Hash + Clone  + Sync> Sync for LRU<K> {}
+unsafe impl<K: Eq + std::hash::Hash + Clone + Sync> Sync for LRU<K> {}

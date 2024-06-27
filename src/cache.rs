@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use crate::{common::{CacheEntry, KeyRef}, eviction_policies::common::EvictionPolicy};
 
 /// A thread-safe key-value cache with configurable eviction policy.
-
 /// This struct, `Cache<K, V, P>`, implements a generic in-memory cache with thread-safety. It utilizes a `HashMap` to store key-value pairs and allows customization of the eviction policy through the `P` generic type, which must implement the `EvictionPolicy<K>` trait.
+/// 
+
 
 pub struct Cache<K, V, P>
 where
@@ -25,7 +26,7 @@ where
 
 impl<K, V, P> Cache<K, V, P>
 where
-    K: Eq + std::hash::Hash + Clone ,
+    K: Eq + std::hash::Hash + Clone + std::fmt::Debug,
     P: EvictionPolicy<K>,
 {
     /// Creates a new `Cache` instance.
@@ -46,10 +47,9 @@ where
 
     pub fn get(&mut self, key: &K) -> Option<&V>
     {
-        if let Some(entry) = self.cache.get(key) {
-            let key = KeyRef::new(key);
-            self.eviction_policy.on_get(&key);
-            return Some(&entry.value);
+        if let Some((key, val)) = self.cache.get_key_value(key) {
+            self.eviction_policy.on_get(&KeyRef::new(key));
+            return Some(&val.value);
         }
         None
     }
@@ -60,12 +60,13 @@ where
 
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
     {
-        if let Some(entry) = self.cache.get_mut(&key) {
-            let key = KeyRef::new(key);
-            self.eviction_policy.on_get(&key);
-            return Some(&mut entry.value);
+        if let Some((k, _)) = self.cache.get_key_value(key) {
+            self.eviction_policy.on_get(&KeyRef::new(k));
+            return Some(&mut self.cache.get_mut(&key).unwrap().value);
+        } else {
+            None
         }
-        None
+
     }
 
     /// Inserts a new key-value pair into the cache.
@@ -73,12 +74,19 @@ where
     /// This function inserts a new key-value pair into the cache. It acquires the lock, checks if the cache is at its maximum size, and if necessary, evicts an entry using the eviction policy. The new key-value pair is then inserted into the cache along with a `CacheEntry` and the eviction policy's `on_set` method is called.
 
     pub fn put(&mut self, key: K, value: V) {
-        if self.cache.len() >= self.max_size {
+        if self.cache.len() >= self.max_size && !self.contains_key(&key){
             if let Some(evicted) = self.eviction_policy.evict() {
                 self.cache.remove(unsafe{&*evicted.key});
             }
         }
-        self.cache.insert(key.clone(), CacheEntry::new(value));
+        match self.cache.get_mut(&key) {
+            Some(v) => {
+                v.value = value;
+            },
+            None => {
+                self.cache.insert(key.clone(), CacheEntry::new(value));
+            }
+        };
         match self.cache.get_key_value(&key){
             None => {},
             Some((k, _)) => {
@@ -93,8 +101,8 @@ where
     /// This function removes the entry associated with the provided `key` from the cache. It acquires the lock and removes the entry if it exists. If an entry is removed, the eviction policy's `remove` method is called.
 
     pub fn remove(&mut self, key: &K) {
-        if self.cache.remove(key).is_some() {
-            let key = KeyRef::new(key);
+        if let Some((k, _)) = self.cache.remove_entry(key) {
+            let key = KeyRef::new(&k);
             self.eviction_policy.remove(key);
         }
     }
@@ -106,7 +114,6 @@ where
     }
 
     ///Returns the current size of the cache. The number of keys in the cache at the moment.
-
     pub fn size(&self) -> usize {
         return self.cache.len();
     }
