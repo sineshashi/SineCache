@@ -43,7 +43,7 @@ where
 
     /// Retrieves the value associated with the given key from the cache.
 
-    /// This function attempts to retrieve the value for the provided `key`. It acquires the lock, checks if the key exists in the cache, and if so, calls the eviction policy's `on_get` method. If the key is found, an immuatable reference to the value is returned. Otherwise, `None` is returned.
+    /// This function attempts to retrieve the value for the provided `key`. It checks if the key exists in the cache, and if so, calls the eviction policy's `on_get` method. If the key is found, an immuatable reference to the value is returned. Otherwise, `None` is returned.
 
     pub fn get(&mut self, key: &K) -> Option<&V>
     {
@@ -56,7 +56,7 @@ where
 
     /// Retrieves mutable pointer to the value associated with the given key from the cache.
 
-    /// This function attempts to retrieve the value for the provided `key`. It acquires the lock, checks if the key exists in the cache, and if so, calls the eviction policy's `on_get` method. If the key is found, an muatable reference to the value is returned. Otherwise, `None` is returned.
+    /// This function attempts to retrieve the value for the provided `key`. It checks if the key exists in the cache, and if so, calls the eviction policy's `on_get` method. If the key is found, an muatable reference to the value is returned. Otherwise, `None` is returned.
 
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V>
     {
@@ -71,7 +71,7 @@ where
 
     /// Inserts a new key-value pair into the cache.
 
-    /// This function inserts a new key-value pair into the cache. It acquires the lock, checks if the cache is at its maximum size, and if necessary, evicts an entry using the eviction policy. The new key-value pair is then inserted into the cache along with a `CacheEntry` and the eviction policy's `on_set` method is called.
+    /// This function inserts a new key-value pair into the cache. It checks if the cache is at its maximum size, and if necessary, evicts an entry using the eviction policy. The new key-value pair is then inserted into the cache along with a `CacheEntry` and the eviction policy's `on_set` method is called.
 
     pub fn put(&mut self, key: K, value: V) {
         if self.cache.len() >= self.max_size && !self.contains_key(&key){
@@ -98,7 +98,7 @@ where
 
     /// Removes the entry with the given key from the cache.
 
-    /// This function removes the entry associated with the provided `key` from the cache. It acquires the lock and removes the entry if it exists. If an entry is removed, the eviction policy's `remove` method is called.
+    /// This function removes the entry associated with the provided `key` from the cache. It removes the entry if it exists. If an entry is removed, the eviction policy's `remove` method is called.
 
     pub fn remove(&mut self, key: &K) {
         if let Some((k, _)) = self.cache.remove_entry(key) {
