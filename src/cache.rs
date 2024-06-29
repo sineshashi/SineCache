@@ -1,11 +1,11 @@
-//! Code of Cache struct which provides functionalities of caching.
+//! Code of `Cache` and `ThreadSafeCache` struct which provides functionalities of caching.
 
 use std::collections::HashMap;
+use tokio::sync::Mutex;
 
 use crate::{common::{CacheEntry, KeyRef}, eviction_policies::common::EvictionPolicy};
 
-/// A thread-safe key-value cache with configurable eviction policy.
-/// This struct, `Cache<K, V, P>`, implements a generic in-memory cache with thread-safety. It utilizes a `HashMap` to store key-value pairs and allows customization of the eviction policy through the `P` generic type, which must implement the `EvictionPolicy<K>` trait.
+/// This struct, `Cache<K, V, P>`, implements a generic in-memory cache. It utilizes a `HashMap` to store key-value pairs and allows customization of the eviction policy through the `P` generic type, which must implement the `EvictionPolicy<K>` trait.
 /// 
 
 
@@ -31,7 +31,7 @@ where
 {
     /// Creates a new `Cache` instance.
 
-    /// This function constructs a new cache with the provided `max_size`, `eviction_policy`. An internal Mutex is created for thread-safe access.
+    /// This function constructs a new cache with the provided `max_size`, `eviction_policy`.
 
     pub fn new(max_size: usize, eviction_policy: P) -> Self {
         Cache {
@@ -116,6 +116,96 @@ where
     ///Returns the current size of the cache. The number of keys in the cache at the moment.
     pub fn size(&self) -> usize {
         return self.cache.len();
+    }
+
+    /// Returns a raw pointer to the value associated with the given key.
+    ///
+    /// Returns a raw pointer to the value associated with the given key, if it exists
+    /// in the cache. This method is unsafe due to potential dangling pointers and should
+    /// only be used in environments where it is safe to manage raw pointers manually.
+    fn get_raw(&mut self, key: &K) -> Option<*const V> {
+        self.get(key).map(|x| x as *const V)
+    }
+}
+
+
+/// A thread-safe and async wrapper around `Cache` using `Mutex` for synchronization.
+
+pub struct ThreadSafeCache<K, V, P>
+where
+    K: Eq + std::hash::Hash + Clone ,
+    P: EvictionPolicy<K>,
+{
+    cache: Mutex<Cache<K, V, P>>
+}
+
+impl<K, V, P> ThreadSafeCache <K, V, P>
+where
+    K: Eq + std::hash::Hash + Clone + std::fmt::Debug,
+    P: EvictionPolicy<K>,
+    V: Clone
+{
+    /// Creates a new `ThreadSafeCache` instance.
+    ///
+    /// Constructs a new thread-safe cache with the provided `max_size` and `eviction_policy`.
+
+    pub fn new(max_size: usize, eviction_policy: P) -> Self {
+        ThreadSafeCache {
+            cache: Mutex::new(Cache::new(max_size, eviction_policy))
+        }
+    }
+
+    /// Retrieves the value associated with the given key from the cache.
+    ///
+    /// Asynchronously retrieves the value associated with the provided `key` from the cache.
+    /// Returns `None` if the key is not found.
+    
+
+    pub async fn get(&self, key: &K) -> Option<V>
+    {
+        self.cache.lock().await.get(key).cloned()
+    }
+
+    /// Retrieves a reference to the value associated with the given key from the cache.
+    ///
+    /// Asynchronously retrieves a reference to the value associated with the provided `key` from the cache.
+    /// Returns `None` if the key is not found.
+    ///
+    /// **Safety Note:** This method returns a reference that may become invalid in a multithreaded environment
+    /// due to potential concurrent modifications. Use with caution in single-threaded environments only.
+    
+    pub async fn get_ref(&self, key: &K) -> Option<&V>
+    {
+        self.cache.lock().await.get_raw(key).map(|x| unsafe{x.as_ref()}).flatten()
+    }
+
+    /// Inserts a new key-value pair into the cache.
+    ///
+    /// Asynchronously inserts a new key-value pair into the cache.
+     
+    pub async fn put(&self, key: K, value: V) {
+        self.cache.lock().await.put(key, value)
+    }
+
+    /// Removes the entry with the given key from the cache.
+    ///
+    /// Asynchronously removes the entry associated with the provided `key` from the cache.
+    pub async fn remove(&self, key: &K) {
+        self.cache.lock().await.remove(key)
+    }
+
+    /// Checks if the cache contains the given key.
+    ///
+    /// Asynchronously checks if the cache contains the provided `key`.
+    pub async fn contains_key(&self, key: &K) -> bool {
+        return self.cache.lock().await.contains_key(&key);
+    }
+
+    /// Returns the current size of the cache.
+    ///
+    /// Asynchronously returns the current number of entries in the cache.
+    pub async fn size(&self) -> usize {
+        return self.cache.lock().await.size();
     }
 }
 

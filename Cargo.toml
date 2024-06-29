@@ -1,6 +1,6 @@
 [package]
 name = "sine_cache"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
 description = "SineCache is a high-performance, in-memory caching library for Rust, designed to efficiently store and manage key-value pairs with support for various eviction policies."
@@ -11,3 +11,5 @@ rust-version = "1.70"
 homepage = "https://docs.rs/sine_cache/latest/sine_cache/"
 
 [dependencies]
+async-trait = "0.1.80"
+tokio = { version = "1.38.0", features = ["full"] }

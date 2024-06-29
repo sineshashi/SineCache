@@ -7,3 +7,4 @@ pub mod fifo;  // FIFO eviction policy
 pub mod common; // Common traits and structs used by eviction policies
 pub mod lru;   // LRU eviction policy
 pub mod lfu; //LFU Eviction policy
+pub mod tests;

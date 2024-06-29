@@ -55,6 +55,10 @@ impl<K: PartialEq> PartialEq for KeyRef<K> {
 
 impl<K: Eq> Eq for KeyRef<K> {}
 
+unsafe impl<K> Send for KeyRef<K> {}
+
+unsafe impl<K> Sync for KeyRef<K> {}
+
 impl<K: std::fmt::Debug> std::fmt::Debug for KeyRef<K> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         f.write_str("KeyRef { key: ")?;
