@@ -29,7 +29,7 @@ To use SineCache in your Rust project, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-sine_cache = "0.1.0"
+sine_cache = "0.1.4"
 ```
 
 ## Examples
