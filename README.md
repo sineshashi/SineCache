@@ -2,8 +2,6 @@
 
 SineCache is a high-performance, in-memory caching library for Rust, designed to efficiently store and manage key-value pairs with support for various eviction policies.
 
-## Getting Started
-
 ## Features
 
 ### Mulitple Eviction Policies
