@@ -8,15 +8,15 @@ SineCache is a high-performance, in-memory caching library for Rust, designed to
 
 Supports FIFO (First In, First Out), LRU (Least Recently Used), and LFU (Least Frequently Used) eviction policies out of the box.
 
-### **Customizable**
+### Customizable
 
 Define your own eviction policies by implementing a simple trait, enabling tailored cache behavior to suit specific application needs.
 
-### **Efficient Memory Management**
+### Efficient Memory Management
 
 Optimizes memory usage by using references (`KeyRef`) to keys stored in the cache, reducing redundancy and improving performance.
 
-### **Async/Await and Concurrency Support**
+### Async/Await and Concurrency Support
 
 The library provides two structs for in-memory caching:
 
