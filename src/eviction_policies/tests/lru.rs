@@ -1,6 +1,6 @@
 //! Unit tests regarding LRU
 
-use crate::{common::KeyRef, eviction_policies::lru::LRU};
+use crate::{ eviction_policies::lru::LRU};
 use crate::eviction_policies::common::EvictionPolicy;
 
 #[test]
@@ -13,8 +13,8 @@ fn test_new_lru() {
 #[test]
 fn test_on_set_and_evict() {
     let mut lru: LRU<i32> = LRU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     lru.on_set(key1.clone());
     lru.on_set(key2.clone());
@@ -27,9 +27,9 @@ fn test_on_set_and_evict() {
 #[test]
 fn test_on_get() {
     let mut lru: LRU<i32> = LRU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
 
     lru.on_set(key1.clone());
     lru.on_set(key2.clone());
@@ -45,8 +45,8 @@ fn test_on_get() {
 #[test]
 fn test_remove_and_evict() {
     let mut lru: LRU<i32> = LRU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     lru.on_set(key1.clone());
     lru.on_set(key2.clone());
@@ -59,10 +59,10 @@ fn test_remove_and_evict() {
 #[test]
 fn test_evict_with_multiple_keys() {
     let mut lru: LRU<i32> = LRU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
-    let key4 = KeyRef::new(&4);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
+    let key4 = 4;
 
     lru.on_set(key1.clone());
     lru.on_set(key2.clone());

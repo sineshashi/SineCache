@@ -1,13 +1,12 @@
 use sine_cache::{
-    cache::ThreadSafeCache,
-    eviction_policies::lfu::LFU,
+    cache::AsyncCache, config::{AsyncCacheConfig, EvictionAsyncConfig}
 };
 use std::sync::Arc;
 use tokio::{sync::Semaphore, test};
 
 #[test]
 async fn test_basic_get_put() {
-    let cache = Arc::new(ThreadSafeCache::new(2, LFU::new()));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: 2, aof_config: None})).await);
 
     // Insert two items into the cache
     cache.put("K1".to_string(), 1).await;
@@ -20,7 +19,7 @@ async fn test_basic_get_put() {
 
 #[test]
 async fn test_get_ref_and_remove() {
-    let cache = Arc::new(ThreadSafeCache::new(2, LFU::new()));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: 2, aof_config: None})).await);
 
     cache.put("K1".to_string(), 1).await;
     cache.put("K2".to_string(), 2).await;
@@ -33,7 +32,7 @@ async fn test_get_ref_and_remove() {
 
 #[test]
 async fn test_contains_key() {
-    let cache = Arc::new(ThreadSafeCache::new(2, LFU::new()));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: 2, aof_config: None})).await);
 
     cache.put("K1".to_string(), 1).await;
     cache.put("K2".to_string(), 2).await;
@@ -44,7 +43,7 @@ async fn test_contains_key() {
 
 #[test]
 async fn test_size() {
-    let cache = Arc::new(ThreadSafeCache::new(2, LFU::new()));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: 2, aof_config: None})).await);
 
     cache.put("K1".to_string(), 1).await;
     cache.put("K2".to_string(), 2).await;
@@ -54,7 +53,7 @@ async fn test_size() {
 
 #[test]
 async fn test_lfu_eviction() {
-    let cache = Arc::new(ThreadSafeCache::new(2, LFU::new()));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: 2, aof_config: None})).await);
 
     cache.put("K1".to_string(), 1).await;
     cache.put("K2".to_string(), 2).await;
@@ -79,8 +78,7 @@ async fn test_thread_safe_lru_cache() {
     const MAX_KEYS_PER_THREAD: usize = 100;
 
     // Create an LRU eviction policy with a max capacity
-    let lfu_policy = LFU::new();
-    let cache = Arc::new(ThreadSafeCache::new(MAX_KEYS_PER_THREAD, lfu_policy));
+    let cache = Arc::new(AsyncCache::new(AsyncCacheConfig::FIFO(EvictionAsyncConfig {max_size: MAX_KEYS_PER_THREAD, aof_config: None})).await);
 
     let semaphore = Arc::new(Semaphore::new(NUM_THREADS/3+1));
 

@@ -1,27 +1,40 @@
 # SineCache
 
-SineCache is a high-performance, in-memory caching library for Rust, designed to efficiently store and manage key-value pairs with support for various eviction policies.
+SineCache is a high-performance, in-memory caching library for Rust, designed to efficiently store and manage key-value pairs with support for various eviction policies and persistence options using Append-Only Files (AOF).
 
 ## Features
 
-### Mulitple Eviction Policies
+### Powerful Caching Mechanism
 
-Supports FIFO (First In, First Out), LRU (Least Recently Used), and LFU (Least Frequently Used) eviction policies out of the box.
+SineCache provides a robust caching solution with flexible configurations and support for multiple eviction policies, ensuring optimal performance for varying application needs.
 
-### Customizable
+### Eviction Policies
 
-Define your own eviction policies by implementing a simple trait, enabling tailored cache behavior to suit specific application needs.
+Choose from FIFO (First-In, First-Out), LRU (Least Recently Used), and LFU (Least Frequently Used) eviction policies. Additionally, define custom eviction policies through a simple trait implementation.
 
-### Efficient Memory Management
+### Asynchronous Support
 
-Optimizes memory usage by using references (`KeyRef`) to keys stored in the cache, reducing redundancy and improving performance.
+- **AsyncCache**: Wraps the `Cache` struct with a `tokio::sync::Mutex`, enabling safe concurrent access with asynchronous operations (`async` versions of `get`, `put`, `remove`, etc.).
 
-### Async/Await and Concurrency Support
+### Persistence with Append-Only Files (AOF)
 
-The library provides two structs for in-memory caching:
+Optionally persist cache data using AOF, ensuring durability and recovery of cache state across application restarts. If `flush_time` is provided (milliseconds), data is flushed to disk after every `flush_time` milliseconds to disk *without blocking the main thread*. In case of `None`, every operation is flushed to disk in the same thread.
 
-- **Cache**: This struct implements various eviction policies for in-memory caching without using locks. Users have the flexibility to implement their own locking mechanisms if needed.
-- **ThreadSafeCache**: This struct wraps the `Cache` struct with a `tokio::sync::Mutex`, enabling safe concurrent access. It offers `async` versions of methods like `get` and `put` to support asynchronous operations. The mutex ensures thread safety, making it suitable for concurrent environments.
+### Thread Safety
+
+Ensures thread safety with appropriate locking mechanisms (`tokio::sync::Mutex` for `AsyncCache`), making it suitable for multi-threaded environments.
+
+### Configuration Flexibility
+
+Configure cache size limits, eviction policies, AOF settings, and more through intuitive configuration structs (`CacheSyncConfig` and `AsyncCacheConfig`).
+
+### Comprehensive Documentation
+
+Extensive API documentation and examples facilitate easy integration and customization within applications.
+
+### Safety and Reliability
+
+Built with Rust's ownership model and type system, ensuring memory safety and preventing common bugs like null pointer dereferencing and data races.
 
 ## Getting Started
 
@@ -29,20 +42,23 @@ To use SineCache in your Rust project, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-sine_cache = "0.1.4"
+sine_cache = "0.2.0"
 ```
 
 ## Examples
 
-### Cache
+Some examples are listed below but for the more detailed documentation, visit: [https://docs.rs/sine_cache/latest/sine_cache/](https://docs.rs/sine_cache/latest/sine_cache/)
+
+### `Cache` - Synchronous Cache:
+
+Simple methods related to `Cache` . For using it in concurrent environment, customize on top of it like wrapping in Mutex and using `async` methods etc.
 
 ```rust
-use sine_cache::cache::Cache;
-use sine_cache::eviction_policies::lfu::LFU;
+use sine_cache::{cache::Cache, config::CacheConfig};
 
 fn main() {
     let capacity = 10; // Maximum number of entries in the cache.
-    let mut cache = Cache::new(capacity, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: capacity}));
 
     // Inserting key-value pairs into the cache
     cache.put(1, "One");
@@ -51,34 +67,138 @@ fn main() {
 
     // Retrieving a value from the cache
     let value = cache.get(&1);
-    println!("{:?}", value); // Output: Some("one")
+    assert!(value.is_some_and(|x| x == &"one"));
 }
 ```
 
-This example demonstrates basic usage of SineCache with LFU eviction policy. You can easily switch to other eviction policies like FIFO or LRU by replacing `LFU::new()` with the desired policy constructor.
+### `AsyncCache` - Asynchronous Cache:
 
-### ThreadSafeCache
+Some examples related to `AsyncCache` are listed below:
+
+- #### Without `AOF`:
+
+  When `AOF` is not required:
 
 ```rust
-use sine_cache::cache::ThreadSafeCache;
-use sine_cache::eviction_policies::lfu::LFU;
+use sine_cache::{cache::AsyncCache, config::{AsyncCacheConfig, EvictionAsyncConfig}};
 
 #[tokio::main]
 async fn main() {
     let capacity = 10; // Maximum number of entries in the cache.
-    let mut cache = ThreadSafeCache::new(capacity, LFU::new());
+    let mut cache = AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {max_size: capacity, aof_config: None})).await;
 
     // Inserting key-value pairs into the cache
-    cache.put(1, "One").await;
-    cache.put(1, "one").await; // Overwrites previous value
-    cache.put(2, "Two").await;
+    cache.put(1, String::from("One")).await;
+    cache.put(1, String::from("one")).await; // Overwrites previous value
+    cache.put(2, String::from("Two")).await;
 
     // Retrieving a value from the cache
     let value = cache.get(&1).await;
-    println!("{:?}", value); // Output: Some("one")
-    assert!(value.is_some() && value.unwrap() == "one");
+    assert!(value.is_some_and(|x| x == "one"));
 }
 ```
+
+- #### With `AOF`:
+
+  When AOF is required, we can pass details related to AOF in the configurations and set the periodic flushes to disk or each operation record to disk based on setting `flush_time` in milliseconds or `None`.
+
+```rust
+use sine_cache::{cache::AsyncCache, config::{AsyncCacheConfig, EvictionAsyncConfig, EvictionAOFConfig}};
+
+#[tokio::main]
+async fn main() {
+  
+    let capacity = 10; // Maximum number of entries in the cache.
+    let mut cache = AsyncCache::new(AsyncCacheConfig::LFU(EvictionAsyncConfig {
+        max_size: capacity,
+        aof_config: Some(EvictionAOFConfig {
+            folder: String::from("./data"), //folder in which persistent file should be written.
+            cache_name: String::from("async_lof_cache"), //Unique cache name as with same name file will be created.
+            flush_time: Some(5000) //After every 5000 milliseconds data will be flushed to disk.
+        })
+    })).await;
+
+    // Inserting key-value pairs into the cache
+    cache.put(1, String::from("One")).await;
+    cache.put(1, String::from("one")).await; // Overwrites previous value
+    cache.put(2, String::from("Two")).await;
+
+    // Retrieving a value from the cache
+    let value = cache.get(&1).await;
+    assert!(value.is_some_and(|x| x == "one"));
+}
+```
+
+### Custom eviction policy
+
+Custom evicton policies can also be defined and used with all the features of `AsyncCache` and `Cache`.
+
+```rust
+use sine_cache::eviction_policies::common::EvictionPolicy;
+use sine_cache::{cache::AsyncCache, config::{AsyncCacheConfig, CustomEvictionAsyncConfig, CustomEvictionAOFConfig}};
+
+pub struct CustomEviction<K> {
+    _phantom: std::marker::PhantomData<K>,
+}
+
+impl<K: Eq + std::hash::Hash + Clone> CustomEviction<K> {
+    pub fn new() -> Self{
+        Self{
+            _phantom: std::marker::PhantomData
+        }
+    }
+}
+
+impl<K: Eq + std::hash::Hash + Clone> EvictionPolicy<K> for CustomEviction<K> {
+    fn on_get(&mut self, key: &K) {
+        // nothing to do.
+    }
+
+    fn on_set(&mut self, key: K) {
+        // nothing to do.
+    }
+
+    fn evict(&mut self) -> Option<K> {
+        // nothing to do
+        None
+    }
+
+    fn remove(&mut self, key: K) {
+        //nothing to do
+    }
+}
+
+#[tokio::main]
+async fn main() {
+  
+    let capacity = 10; // Maximum number of entries in the cache.
+    let mut cache = AsyncCache::new(AsyncCacheConfig::Custom(CustomEvictionAsyncConfig {
+        max_size: capacity,
+        aof_config: Some(CustomEvictionAOFConfig {
+            folder: String::from("./data"), //folder in which persistent file should be written.
+            cache_name: String::from("async_lof_custom_cache"), //Unique cache name as with same name file will be created.
+            flush_time: Some(5000), //After every 5000 milliseconds data will be flushed to disk.
+            persist_read_ops: true //whether to store reads also, true generally.
+        }),
+        policy: Box::new(CustomEviction::new())
+    })).await;
+
+    // Inserting key-value pairs into the cache
+    cache.put(1, String::from("One")).await;
+    cache.put(1, String::from("one")).await; // Overwrites previous value
+    cache.put(2, String::from("Two")).await;
+
+    // Retrieving a value from the cache
+    let value = cache.get(&1).await;
+    assert!(value.is_some_and(|x| x == "one"));
+}
+
+```
+
+## Planned Features
+### AOF Compaction Periodically
+
+Compact AOF files periodically to stop the append only file becoming too large.
 
 ## License
 

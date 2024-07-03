@@ -1,6 +1,6 @@
 //! Unit tests regarding LFU
 
-use crate::{common::KeyRef, eviction_policies::lfu::LFU};
+use crate::{eviction_policies::lfu::LFU};
 use crate::eviction_policies::common::EvictionPolicy;
 
 #[test]
@@ -12,8 +12,8 @@ fn test_new_lfu() {
 #[test]
 fn test_on_set_and_evict() {
     let mut lfu: LFU<i32> = LFU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     lfu.on_set(key1.clone());
     lfu.on_set(key2.clone());
@@ -28,9 +28,9 @@ fn test_on_set_and_evict() {
 #[test]
 fn test_on_get() {
     let mut lfu: LFU<i32> = LFU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
 
     lfu.on_set(key1.clone());
     lfu.on_set(key2.clone());
@@ -46,8 +46,8 @@ fn test_on_get() {
 #[test]
 fn test_remove_and_evict() {
     let mut lfu: LFU<i32> = LFU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     lfu.on_set(key1.clone());
     lfu.on_set(key2.clone());
@@ -60,10 +60,10 @@ fn test_remove_and_evict() {
 #[test]
 fn test_evict_with_multiple_keys() {
     let mut lfu: LFU<i32> = LFU::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
-    let key4 = KeyRef::new(&4);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
+    let key4 = 4;
 
     lfu.on_set(key1.clone());
     lfu.on_set(key2.clone());

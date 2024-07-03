@@ -1,6 +1,6 @@
 //! Unit tests regarding FIFO
 
-use crate::{common::KeyRef, eviction_policies::fifo::FIFO};
+use crate::{eviction_policies::fifo::FIFO};
 use crate::eviction_policies::common::EvictionPolicy;
 
 #[test]
@@ -12,8 +12,8 @@ fn test_new_fifo() {
 #[test]
 fn test_on_set_and_evict() {
     let mut fifo: FIFO<i32> = FIFO::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     fifo.on_set(key1.clone());
     fifo.on_set(key2.clone());
@@ -26,9 +26,9 @@ fn test_on_set_and_evict() {
 #[test]
 fn test_evict() {
     let mut fifo: FIFO<i32> = FIFO::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
 
     fifo.on_set(key1.clone());
     fifo.on_set(key2.clone());
@@ -43,8 +43,8 @@ fn test_evict() {
 #[test]
 fn test_remove_and_evict() {
     let mut fifo: FIFO<i32> = FIFO::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
+    let key1 = 1;
+    let key2 = 2;
 
     fifo.on_set(key1.clone());
     fifo.on_set(key2.clone());
@@ -57,9 +57,9 @@ fn test_remove_and_evict() {
 #[test]
 fn test_evict_with_tombstones() {
     let mut fifo: FIFO<i32> = FIFO::new();
-    let key1 = KeyRef::new(&1);
-    let key2 = KeyRef::new(&2);
-    let key3 = KeyRef::new(&3);
+    let key1 = 1;
+    let key2 = 2;
+    let key3 = 3;
 
     fifo.on_set(key1.clone());
     fifo.on_set(key2.clone());
@@ -74,7 +74,7 @@ fn test_evict_with_tombstones() {
 #[test]
 fn test_on_get() {
     let mut fifo: FIFO<i32> = FIFO::new();
-    let key1 = KeyRef::new(&1);
+    let key1 = 1;
     fifo.on_set(key1.clone());
     fifo.on_get(&key1);
     // On_get should not affect the queue, no assertions needed here.

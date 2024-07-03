@@ -1,4 +1,4 @@
 //! Contains Unit tests...
-pub mod lru;
-pub mod lfu;
-pub mod fifo;
+mod lru;
+mod lfu;
+mod fifo;
