@@ -1,13 +1,12 @@
 use sine_cache::{
-    cache::Cache,
-    eviction_policies::lfu::LFU,
+    cache::Cache, config::CacheConfig
 };
 
 /// Test basic functionality of putting and getting items from the cache.
 #[test]
 fn test_basic_get_put() {
     // Create a new cache with LFU eviction policy and capacity of 2
-    let mut cache = Cache::new(2, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: 2}));
 
     // Insert two items into the cache
     cache.put("K1".to_string(), 1);
@@ -22,7 +21,7 @@ fn test_basic_get_put() {
 /// Test getting mutable reference and removing items from the cache.
 #[test]
 fn test_get_mut_and_remove() {
-    let mut cache = Cache::new(2, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -40,7 +39,7 @@ fn test_get_mut_and_remove() {
 /// Test checking if a key exists in the cache.
 #[test]
 fn test_contains_key() {
-    let mut cache = Cache::new(2, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -52,7 +51,7 @@ fn test_contains_key() {
 /// Test getting the current size of the cache.
 #[test]
 fn test_size() {
-    let mut cache = Cache::new(2, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -63,7 +62,7 @@ fn test_size() {
 /// Test LFU eviction policy when inserting more items than the cache capacity.
 #[test]
 fn test_lfu_eviction() {
-    let mut cache = Cache::new(2, LFU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LFU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);

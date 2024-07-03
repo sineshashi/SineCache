@@ -1,5 +1,6 @@
 //! Contains common structs and traits used throughout the library.
 
+use serde::{Deserialize, Serialize};
 /// A cached entry representing a key-value pair.
 ///
 /// This struct, `CacheEntry<T>`, stores a cached value of type `T` along
@@ -20,55 +21,52 @@ impl<T> CacheEntry<T> {
     }
 }
 
-/// An opaque reference to a key type `K`.
-///
-/// This struct, `KeyRef<K>`, provides an opaque reference to a key of type `K`.
-/// It allows for hashing and equality comparison while hiding the actual key type.
-/// This can be useful for cache implementations that need to store keys in a
-/// specific way, but still want to leverage the `Hash` and `PartialEq` traits.
-#[derive(Clone)]
-pub struct KeyRef<K> {
-    pub key: *const K,
+/// Enum to indicate which operation is being performed.
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum Operation {
+    Put,
+    Get,
+    Remove,
 }
 
-impl<K> KeyRef<K> {
-    /// Creates a new `KeyRef` instance from a reference to a key.
-    ///
-    /// This function constructs a new `KeyRef<K>` by taking a reference to a
-    /// value of type `K`. The actual key data is not copied, but rather referenced.
-    pub fn new(key: &K) -> Self {
-        KeyRef { key }
-    }
-}
-
-impl<K: std::hash::Hash> std::hash::Hash for KeyRef<K> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        unsafe { (*self.key).hash(state) }
-    }
-}
-
-impl<K: PartialEq> PartialEq for KeyRef<K> {
-    fn eq(&self, other: &Self) -> bool {
-        unsafe { (*self.key).eq(&*other.key) }
-    }
-}
-
-impl<K: Eq> Eq for KeyRef<K> {}
-
-unsafe impl<K> Send for KeyRef<K> {}
-
-unsafe impl<K> Sync for KeyRef<K> {}
-
-impl<K: std::fmt::Debug> std::fmt::Debug for KeyRef<K> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        f.write_str("KeyRef { key: ")?;
-        // Since we have a raw pointer, we can't directly print its value
-        // for security reasons.
-        unsafe {
-            // This is safe only if the pointer points to valid memory
-            // and the type K implements Debug.
-            f.write_fmt(format_args!("{:?}", *self.key))?;
+impl Operation {
+    /// Provides corresponding number which can be saved in AOF to indentify the operation.
+    /// `Get` = `0`
+    /// `Put` = `1`
+    /// `Remove` = `2`
+    pub fn to_int(&self) -> i8 {
+        match self {
+            Self::Get => 0,
+            Self::Put => 1,
+            Self::Remove => 2,
         }
-        f.write_str(" }")
     }
+
+    /// Loads the corresponding enum based on the provided integer.
+    /// `Get` = `0`
+    /// `Put` = `1`
+    /// `Remove` = `2`
+    pub fn from_int(i: u8) -> Self {
+        if i == 0 {
+            Self::Get
+        } else if i == 1 {
+            Self::Put
+        } else if i == 2 {
+            Self::Remove
+        } else {
+            panic!("Invalid integer {:?}", i);
+        }
+    }
+}
+
+/// struct to represent the single record in AOF.
+#[derive(Clone)]
+pub struct AOFRecord<K, V>
+where
+    for<'de> K: Deserialize<'de> + Serialize,
+    for<'de> V: Deserialize<'de> + Serialize,
+{
+    pub key: K,
+    pub value: Option<V>,
+    pub operation: Operation,
 }

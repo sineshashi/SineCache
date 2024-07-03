@@ -1,3 +1,2 @@
-pub mod lru;
-pub mod lfu;
-pub mod fifo;
+pub mod without_lof;
+pub mod with_lof;

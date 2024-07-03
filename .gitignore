@@ -1,2 +1,7 @@
 /target
 /Cargo.lock
+
+**/*.dat
+*.dat
+/data
+./data

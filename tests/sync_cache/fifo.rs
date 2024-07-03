@@ -1,17 +1,13 @@
 //!Includes tests regarding Caching with FIFO Policy.
 
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
-
 use sine_cache::cache::Cache;
 use sine_cache::common::CacheEntry;
-use sine_cache::eviction_policies::fifo::FIFO;
+use sine_cache::config::CacheConfig;
 
 // Basic functionality tests
 #[test]
 fn test_put_get() {
-    let mut cache = Cache::new(2, FIFO::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::FIFO(CacheConfig{max_size: 2}));
     let key1 = "key1".to_string();
     let value1 = CacheEntry { value: "value1".to_string() };
     cache.put(key1.clone(), value1.clone());
@@ -34,7 +30,7 @@ fn test_put_get() {
 
 #[test]
 fn test_eviction() {
-    let mut cache = Cache::new(2, FIFO::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::FIFO(CacheConfig{max_size: 2}));
     let key1 = "key1".to_string();
     let value1 = CacheEntry { value: "value1".to_string() };
     cache.put(key1.clone(), value1.clone());
@@ -61,7 +57,7 @@ fn test_eviction() {
 /// Test getting mutable reference and removing items from the cache.
 #[test]
 fn test_get_mut_and_remove() {
-    let mut cache = Cache::new(2, FIFO::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::FIFO(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -78,7 +74,7 @@ fn test_get_mut_and_remove() {
 
 #[test]
 fn test_contains_key() {
-    let mut cache = Cache::new(2, FIFO::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::FIFO(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -90,7 +86,7 @@ fn test_contains_key() {
 /// Test getting the current size of the cache.
 #[test]
 fn test_size() {
-    let mut cache = Cache::new(2, FIFO::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::FIFO(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);

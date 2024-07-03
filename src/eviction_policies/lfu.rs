@@ -8,16 +8,16 @@
 //!
 //! ## Implementation Details
 //! - `LFU<K>` struct:
-//!   - `map`: Maps each `KeyRef<K>` to its access frequency.
+//!   - `map`: Maps each `K` to its access frequency.
 //!   - `least_freq`: Tracks the smallest frequency among all keys.
 //!   - `freq_nodes`: Maps access frequencies to LRU caches storing keys accessed at that frequency.
 //!
 //! - Methods:
 //!   - `new()`: Creates a new instance of `LFU<K>` with empty internal structures.
-//!   - `record_access(&mut self, key: &KeyRef<K>)`: Records an access to a key, updating its frequency
+//!   - `record_access(&mut self, key: &K)`: Records an access to a key, updating its frequency
 //!     and moving it to the appropriate frequency list.
-//!   - `remove_key(&mut self, key: KeyRef<K>)`: Removes a key from the LFU cache and adjusts internal state.
-//!   - `remove_lfu_key(&mut self) -> Option<KeyRef<K>>`: Evicts the least frequently used key from the LFU cache.
+//!   - `remove_key(&mut self, key: K)`: Removes a key from the LFU cache and adjusts internal state.
+//!   - `remove_lfu_key(&mut self) -> Option<K>`: Evicts the least frequently used key from the LFU cache.
 //!
 //!
 //! This module is part of a larger caching library and is used to manage the eviction policy
@@ -37,7 +37,6 @@ use super::{
     common::EvictionPolicy,
     lru::LRU,
 };
-use crate::common::KeyRef;
 
 /// LFU (Least Frequently Used) eviction policy for a cache.
 ///
@@ -48,7 +47,7 @@ where
     K: Eq + std::hash::Hash + Clone + std::fmt::Debug, // Key requirements: Eq, Hash, Clone, Debug
 {
     /// Maps each key to its access frequency count.
-    map: HashMap<KeyRef<K>, usize>,
+    map: HashMap<K, usize>,
 
     /// Tracks the smallest frequency of any key in the cache.
     least_freq: usize,
@@ -74,7 +73,7 @@ impl<K: Eq + std::hash::Hash + Clone + std::fmt::Debug> LFU<K> {
     ///
     /// If the key exists in the LFU cache, its access frequency is incremented. The key is then moved
     /// to the appropriate frequency list in `freq_nodes` using an LRU strategy.
-    fn record_access(&mut self, key: &KeyRef<K>) {
+    fn record_access(&mut self, key: &K) {
         if let Some(freq) = self.map.get_mut(key) {
             // Remove the key from its current frequency list
             if *freq != 0 {
@@ -106,7 +105,7 @@ impl<K: Eq + std::hash::Hash + Clone + std::fmt::Debug> LFU<K> {
     ///
     /// Removes the key and its frequency count from `map` and removes the key from the appropriate
     /// frequency list in `freq_nodes`.
-    fn remove_key(&mut self, key: KeyRef<K>) {
+    fn remove_key(&mut self, key: K) {
         if let Some(freq) = self.map.remove(&key) {
             if let Some(lru) = self.freq_nodes.get_mut(&freq) {
                 lru.remove(key.clone()); // Remove key from the LRU list at the specific frequency
@@ -127,7 +126,7 @@ impl<K: Eq + std::hash::Hash + Clone + std::fmt::Debug> LFU<K> {
     /// Evicts the least frequently used key from the LFU cache.
     ///
     /// Evicts the least frequently used key by removing it from the lowest frequency list in `freq_nodes`.
-    fn remove_lfu_key(&mut self) -> Option<KeyRef<K>> {
+    fn remove_lfu_key(&mut self) -> Option<K> {
         if self.least_freq == 0 {
             return None; // No keys to evict if all frequencies are empty
         }
@@ -159,14 +158,14 @@ impl<K: Eq + std::hash::Hash + Clone + std::fmt::Debug> EvictionPolicy<K> for LF
     /// Called when a value associated with a key is retrieved from the cache.
     ///
     /// Records the access of the key to adjust its frequency in the LFU cache.
-    fn on_get(&mut self, key: &KeyRef<K>) {
+    fn on_get(&mut self, key: &K) {
         self.record_access(key);
     }
 
     /// Called when a new key-value pair is inserted into the cache.
     ///
     /// Inserts the key into the LFU cache and initializes its access frequency if it's new.
-    fn on_set(&mut self, key: KeyRef<K>) {
+    fn on_set(&mut self, key: K) {
         if !self.map.contains_key(&key) {
             self.map.insert(key.clone(), 0); // Insert the key with an initial frequency of 0
             self.least_freq = 0; // Reset `least_freq` because a new key is added
@@ -177,14 +176,14 @@ impl<K: Eq + std::hash::Hash + Clone + std::fmt::Debug> EvictionPolicy<K> for LF
     /// Evicts a key-value pair from the cache based on the LFU eviction policy.
     ///
     /// Evicts the least frequently used key-value pair from the LFU cache.
-    fn evict(&mut self) -> Option<KeyRef<K>> {
+    fn evict(&mut self) -> Option<K> {
         return self.remove_lfu_key();
     }
 
     /// Removes a key-value pair from the LFU cache based on the key.
     ///
     /// Removes the specified key and its associated value from the LFU cache.
-    fn remove(&mut self, key: KeyRef<K>) {
+    fn remove(&mut self, key: K) {
         self.remove_key(key);
     }
 }

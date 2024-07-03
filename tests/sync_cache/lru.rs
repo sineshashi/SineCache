@@ -3,15 +3,13 @@ use std::{
 };
 
 use sine_cache::{
-    cache::Cache,
-    common::CacheEntry,
-    eviction_policies::{common::EvictionPolicy, lru::LRU},
+    cache::Cache, common::CacheEntry, config::CacheConfig, eviction_policies::{common::EvictionPolicy, lru::LRU}
 };
 
 /// Test basic functionality of putting and getting items from the cache.
 #[test]
 fn test_basic_get_put() {
-    let mut cache = Cache::new(2, LRU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LRU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -23,7 +21,7 @@ fn test_basic_get_put() {
 /// Test LRU eviction policy when inserting more items than the cache capacity.
 #[test]
 fn test_lru_eviction() {
-    let mut cache = Cache::new(2, LRU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LRU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -43,7 +41,7 @@ fn test_lru_eviction() {
 /// Test getting mutable reference and removing items from the cache.
 #[test]
 fn test_get_mut_and_remove() {
-    let mut cache = Cache::new(2, LRU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LRU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -60,7 +58,7 @@ fn test_get_mut_and_remove() {
 
 #[test]
 fn test_contains_key() {
-    let mut cache = Cache::new(2, LRU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LRU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);
@@ -71,7 +69,7 @@ fn test_contains_key() {
 
 #[test]
 fn test_size() {
-    let mut cache = Cache::new(2, LRU::new());
+    let mut cache = Cache::new(sine_cache::config::CacheSyncConfig::LRU(CacheConfig{max_size: 2}));
 
     cache.put("K1".to_string(), 1);
     cache.put("K2".to_string(), 2);

@@ -24,8 +24,6 @@
 
 use std::{collections::HashMap, fmt::Debug, ptr::NonNull};
 
-use crate::common::KeyRef;
-
 use super::common::EvictionPolicy;
 
 /// Represents a node in the doubly linked list used within the LRU cache.
@@ -33,7 +31,7 @@ pub struct LinkedListNode<K>
 where
     K: Eq + std::hash::Hash + Clone,
 {
-    pub key: KeyRef<K>,
+    pub key: K,
     pub pre: Option<*mut LinkedListNode<K>>,
     pub next: Option<*mut LinkedListNode<K>>,
 }
@@ -43,7 +41,7 @@ where
     K: Eq + std::hash::Hash + Clone,
 {
     /// Creates a new `LinkedListNode` with the provided key.
-    pub fn new(key_ref: KeyRef<K>) -> Self {
+    pub fn new(key_ref: K) -> Self {
         Self {
             key: key_ref,
             pre: None,
@@ -57,7 +55,7 @@ pub struct LRU<K>
 where
     K: Eq + std::hash::Hash + Clone,
 {
-    map: HashMap<KeyRef<K>, NonNull<LinkedListNode<K>>>,
+    map: HashMap<K, NonNull<LinkedListNode<K>>>,
     head: Option<*mut LinkedListNode<K>>,
     tail: Option<*mut LinkedListNode<K>>,
 }
@@ -128,7 +126,7 @@ where
     }
 
     /// Moves a node with the given key to the front of the linked list.
-    pub fn move_to_front(&mut self, key: &KeyRef<K>) {
+    pub fn move_to_front(&mut self, key: &K) {
         if let Some(node) = self.map.remove(key) {
             // Remove the node from its current position
             self.remove_node(&node);
@@ -139,7 +137,7 @@ where
     }
 
     /// Removes the least recently used node from the linked list and returns its key.
-    fn remove_from_last(&mut self) -> Option<KeyRef<K>> {
+    fn remove_from_last(&mut self) -> Option<K> {
         if let Some(tail) = self.tail {
             self.map.remove(unsafe { &(*tail).key });
             if let Some(pre) = unsafe { (*tail).pre } {
@@ -164,14 +162,14 @@ where
     K: Eq + std::hash::Hash + Clone + Debug,
 {
     /// Adjusts the cache structure when a key is accessed.
-    fn on_get(&mut self, key: &KeyRef<K>) {
+    fn on_get(&mut self, key: &K) {
         if self.map.contains_key(key) {
             self.move_to_front(key);
         }
     }
 
     /// Adjusts the cache structure when a new key-value pair is set.
-    fn on_set(&mut self, key: KeyRef<K>) {
+    fn on_set(&mut self, key: K) {
         if let Some(node) = self.map.remove(&key) {
             self.remove_node(&node);
         }
@@ -181,12 +179,12 @@ where
     }
 
     /// Removes and returns the least recently used key from the cache.
-    fn evict(&mut self) -> Option<KeyRef<K>> {
+    fn evict(&mut self) -> Option<K> {
         self.remove_from_last()
     }
 
     /// Removes a specific key from the cache.
-    fn remove(&mut self, key: KeyRef<K>) {
+    fn remove(&mut self, key: K) {
         if let Some(removed) = self.map.remove(&key) {
             self.remove_node(&removed);
         }
