@@ -18,7 +18,7 @@ Choose from FIFO (First-In, First-Out), LRU (Least Recently Used), and LFU (Leas
 
 ### Persistence with Append-Only Files (AOF)
 
-Optionally persist cache data using AOF, ensuring durability and recovery of cache state across application restarts.
+Optionally persist cache data using AOF, ensuring durability and recovery of cache state across application restarts. If `flush_time` is provided (milliseconds), data is flushed to disk after every `flush_time` milliseconds to disk *without blocking the main thread*. In case of `None`, every operation is flushed to disk in the same thread.
 
 ### Thread Safety
 
