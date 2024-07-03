@@ -195,6 +195,11 @@ async fn main() {
 
 ```
 
+## Planned Features
+### AOF Compaction Periodically
+
+Compact AOF files periodically to stop the append only file becoming too large.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
